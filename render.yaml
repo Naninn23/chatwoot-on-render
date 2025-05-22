@@ -1,0 +1,47 @@
+services:
+  - type: web
+    name: chatwoot
+    env: docker
+    repo: https://github.com/chatwoot/chatwoot
+    plan: free
+    dockerContext: .
+    dockerfilePath: Dockerfile
+    envVars:
+      - key: RAILS_ENV
+        value: production
+      - key: SECRET_KEY_BASE
+        generateValue: true
+      - key: FRONTEND_URL
+        value: https://chatwoot.onrender.com
+      - key: POSTGRES_HOST
+        fromService:
+          type: pserv
+          name: chatwoot-db
+          property: host
+      - key: POSTGRES_DB
+        value: chatwoot
+      - key: POSTGRES_USER
+        value: chatwoot
+      - key: POSTGRES_PASSWORD
+        generateValue: true
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: chatwoot-redis
+          property: connectionString
+
+  - type: pserv
+    name: chatwoot-db
+    env: postgres
+    plan: free
+    envVars:
+      - key: POSTGRES_DB
+        value: chatwoot
+      - key: POSTGRES_USER
+        value: chatwoot
+      - key: POSTGRES_PASSWORD
+        generateValue: true
+
+  - type: redis
+    name: chatwoot-redis
+    plan: free
