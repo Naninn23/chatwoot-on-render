@@ -3,7 +3,7 @@ services:
     name: chatwoot
     env: docker
     repo: https://github.com/chatwoot/chatwoot
-    plan: free # Ensure this plan supports the number of services you're defining
+    plan: free # Ensure this plan supports your services
     dockerContext: .
     dockerfilePath: Dockerfile
     envVars:
@@ -12,51 +12,45 @@ services:
       - key: SECRET_KEY_BASE
         generateValue: true
       - key: FRONTEND_URL
-        # Ensure this value is updated to your actual Render service URL after deployment
+        # IMPORTANT: Update this to your actual Render service URL after deployment
         # e.g., https://your-chatwoot-app-name.onrender.com
         value: https://chatwoot.onrender.com
       - key: POSTGRES_HOST
         fromService:
-          type: pserv
-          name: chatwoot-db
+          type: postgres # Correct type for referencing a database defined under 'databases'
+          name: chatwoot-postgres-db # Matches the name in the 'databases' section
           property: host
       - key: POSTGRES_DB
-        fromService: # Best practice: get DB name from the service if it's set there
-          type: pserv
-          name: chatwoot-db
-          envVarKey: POSTGRES_DB
+        fromService:
+          type: postgres
+          name: chatwoot-postgres-db
+          property: database # Will be 'chatwoot' due to 'databaseName' in the databases section
       - key: POSTGRES_USER
-        fromService: # Best practice: get DB user from the service
-          type: pserv
-          name: chatwoot-db
-          envVarKey: POSTGRES_USER
+        fromService:
+          type: postgres
+          name: chatwoot-postgres-db
+          property: user # Will be 'chatwoot' due to 'user' in the databases section
       - key: POSTGRES_PASSWORD
         fromService:
-          type: pserv
-          name: chatwoot-db
-          envVarKey: POSTGRES_PASSWORD
+          type: postgres
+          name: chatwoot-postgres-db
+          property: password
       - key: REDIS_URL
         fromService:
           type: redis
           name: chatwoot-redis
           property: connectionString
 
-  - type: pserv # Private Service for PostgreSQL
-    name: chatwoot-db
-    runtime: postgres # This is critical for Render to recognize it as a managed PostgreSQL
-    plan: free # Ensure this plan is available and suitable
-    postgresMajorVersion: 14 # Explicitly setting the version (e.g., 14, 15, 16). Render defaults to 14 if omitted.
-    envVars:
-      - key: POSTGRES_DB
-        value: chatwoot # Render will create this database
-      - key: POSTGRES_USER
-        value: chatwoot # Render will create this user
-      - key: POSTGRES_PASSWORD
-        generateValue: true # Render will generate a secure password for this user
-
-  - type: redis
+  - type: redis # Redis is correctly defined as a service
     name: chatwoot-redis
-    plan: free # Ensure this plan is available and suitable
-    # redisVersion: 7 # Optional: Explicitly set Redis version (e.g., 6, 7). Render defaults to 7 if omitted.
-    ipAllowList: [] # Important: Allows access from other services in your Render account.
-                    # For stricter security, you can specify IPs, but '[]' is common for internal services.
+    plan: free # Ensure this plan is available
+    ipAllowList: [] # Allows access from other services in your Render account
+    # redisVersion: 7 # Optional: Specify Redis version (e.g., 6, 7). Defaults to 7.
+
+databases:
+  - name: chatwoot-postgres-db # This is the Render service name for your PostgreSQL database
+    plan: free # Ensure this plan is available for databases
+    databaseName: chatwoot     # This sets the actual database name (e.g., CREATE DATABASE chatwoot)
+    user: chatwoot             # This sets the PostgreSQL user (e.g., CREATE USER chatwoot)
+    # postgresMajorVersion: 14 # Optional: Specify PostgreSQL version (e.g., 14, 15, 16). Defaults to 14.
+    # ipAllowList is generally not needed here if only accessed by other Render services in your account.
