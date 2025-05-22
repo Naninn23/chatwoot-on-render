@@ -12,7 +12,7 @@ services:
       - key: SECRET_KEY_BASE
         generateValue: true
       - key: FRONTEND_URL
-        value: https://chatwoot.onrender.com
+        value: https://chatwoot.onrender.com # Certifique-se de que este é o URL correto após o deploy
       - key: POSTGRES_HOST
         fromService:
           type: pserv
@@ -23,16 +23,18 @@ services:
       - key: POSTGRES_USER
         value: chatwoot
       - key: POSTGRES_PASSWORD
-        generateValue: true
+        fromService: # Corrigido: Pega a senha gerada pelo serviço do banco de dados
+          type: pserv
+          name: chatwoot-db
+          envVarKey: POSTGRES_PASSWORD
       - key: REDIS_URL
         fromService:
           type: redis
           name: chatwoot-redis
           property: connectionString
-
-  - type: pserv
+  - type: pserv # Private Service para o PostgreSQL
     name: chatwoot-db
-    env: postgres
+    runtime: postgres # Corrigido: 'runtime: postgres' em vez de 'env: postgres'
     plan: free
     envVars:
       - key: POSTGRES_DB
@@ -40,8 +42,13 @@ services:
       - key: POSTGRES_USER
         value: chatwoot
       - key: POSTGRES_PASSWORD
-        generateValue: true
-
+        generateValue: true # O Render vai gerar uma senha segura
+    # Opcional: postgresMajorVersion: 14 (ou a versão desejada, o padrão é 14)
+    # ipAllowList não é estritamente necessário aqui, pois por padrão
+    # serviços privados são acessíveis por outros serviços na mesma conta Render.
+    # Se necessário, poderia ser: ipAllowList: []
   - type: redis
     name: chatwoot-redis
     plan: free
+    ipAllowList: [] # Adicionado: Necessário para serviços Redis. '[]' permite acesso de outros serviços na sua conta Render.
+    # Opcional: redisVersion: 7 (ou a versão desejada, o padrão é 7)
