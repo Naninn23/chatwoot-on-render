@@ -3,7 +3,7 @@ services:
     name: chatwoot
     env: docker
     repo: https://github.com/chatwoot/chatwoot
-    plan: free
+    plan: free # Ensure this plan supports the number of services you're defining
     dockerContext: .
     dockerfilePath: Dockerfile
     envVars:
@@ -12,18 +12,26 @@ services:
       - key: SECRET_KEY_BASE
         generateValue: true
       - key: FRONTEND_URL
-        value: https://chatwoot.onrender.com # Certifique-se de que este é o URL correto após o deploy
+        # Ensure this value is updated to your actual Render service URL after deployment
+        # e.g., https://your-chatwoot-app-name.onrender.com
+        value: https://chatwoot.onrender.com
       - key: POSTGRES_HOST
         fromService:
           type: pserv
           name: chatwoot-db
           property: host
       - key: POSTGRES_DB
-        value: chatwoot
+        fromService: # Best practice: get DB name from the service if it's set there
+          type: pserv
+          name: chatwoot-db
+          envVarKey: POSTGRES_DB
       - key: POSTGRES_USER
-        value: chatwoot
+        fromService: # Best practice: get DB user from the service
+          type: pserv
+          name: chatwoot-db
+          envVarKey: POSTGRES_USER
       - key: POSTGRES_PASSWORD
-        fromService: # Corrigido: Pega a senha gerada pelo serviço do banco de dados
+        fromService:
           type: pserv
           name: chatwoot-db
           envVarKey: POSTGRES_PASSWORD
@@ -32,23 +40,23 @@ services:
           type: redis
           name: chatwoot-redis
           property: connectionString
-  - type: pserv # Private Service para o PostgreSQL
+
+  - type: pserv # Private Service for PostgreSQL
     name: chatwoot-db
-    runtime: postgres # Corrigido: 'runtime: postgres' em vez de 'env: postgres'
-    plan: free
+    runtime: postgres # This is critical for Render to recognize it as a managed PostgreSQL
+    plan: free # Ensure this plan is available and suitable
+    postgresMajorVersion: 14 # Explicitly setting the version (e.g., 14, 15, 16). Render defaults to 14 if omitted.
     envVars:
       - key: POSTGRES_DB
-        value: chatwoot
+        value: chatwoot # Render will create this database
       - key: POSTGRES_USER
-        value: chatwoot
+        value: chatwoot # Render will create this user
       - key: POSTGRES_PASSWORD
-        generateValue: true # O Render vai gerar uma senha segura
-    # Opcional: postgresMajorVersion: 14 (ou a versão desejada, o padrão é 14)
-    # ipAllowList não é estritamente necessário aqui, pois por padrão
-    # serviços privados são acessíveis por outros serviços na mesma conta Render.
-    # Se necessário, poderia ser: ipAllowList: []
+        generateValue: true # Render will generate a secure password for this user
+
   - type: redis
     name: chatwoot-redis
-    plan: free
-    ipAllowList: [] # Adicionado: Necessário para serviços Redis. '[]' permite acesso de outros serviços na sua conta Render.
-    # Opcional: redisVersion: 7 (ou a versão desejada, o padrão é 7)
+    plan: free # Ensure this plan is available and suitable
+    # redisVersion: 7 # Optional: Explicitly set Redis version (e.g., 6, 7). Render defaults to 7 if omitted.
+    ipAllowList: [] # Important: Allows access from other services in your Render account.
+                    # For stricter security, you can specify IPs, but '[]' is common for internal services.
