@@ -14,29 +14,17 @@ services:
       - key: FRONTEND_URL
         # IMPORTANT: Update this to your actual Render service URL after deployment
         # e.g., https://your-chatwoot-app-name.onrender.com
-        value: https://chatwoot.onrender.com
+        value: https://chatwoot.onrender.com # Placeholder, update as needed
       - key: POSTGRES_HOST
-        fromService:
-          type: postgres # Correct type for referencing a database defined under 'databases'
-          name: chatwoot-postgres-db # Matches the name in the 'databases' section
-          property: host
+        value: ${chatwoot-postgres-db.host}
       - key: POSTGRES_DB
-        fromService:
-          type: postgres
-          name: chatwoot-postgres-db
-          property: database # Will be 'chatwoot' due to 'databaseName' in the databases section
+        value: ${chatwoot-postgres-db.database} # Refers to 'databaseName' in the databases block
       - key: POSTGRES_USER
-        fromService:
-          type: postgres
-          name: chatwoot-postgres-db
-          property: user # Will be 'chatwoot' due to 'user' in the databases section
+        value: ${chatwoot-postgres-db.user}     # Refers to 'user' in the databases block
       - key: POSTGRES_PASSWORD
-        fromService:
-          type: postgres
-          name: chatwoot-postgres-db
-          property: password
+        value: ${chatwoot-postgres-db.password} # The auto-generated password
       - key: REDIS_URL
-        fromService:
+        fromService: # fromService is correct for referencing other services like Redis
           type: redis
           name: chatwoot-redis
           property: connectionString
@@ -48,9 +36,8 @@ services:
     # redisVersion: 7 # Optional: Specify Redis version (e.g., 6, 7). Defaults to 7.
 
 databases:
-  - name: chatwoot-postgres-db # This is the Render service name for your PostgreSQL database
+  - name: chatwoot-postgres-db # This is the 'dbName' used in ${...} references
     plan: free # Ensure this plan is available for databases
-    databaseName: chatwoot     # This sets the actual database name (e.g., CREATE DATABASE chatwoot)
-    user: chatwoot             # This sets the PostgreSQL user (e.g., CREATE USER chatwoot)
-    # postgresMajorVersion: 14 # Optional: Specify PostgreSQL version (e.g., 14, 15, 16). Defaults to 14.
-    # ipAllowList is generally not needed here if only accessed by other Render services in your account.
+    databaseName: chatwoot     # Value for ${chatwoot-postgres-db.database}
+    user: chatwoot             # Value for ${chatwoot-postgres-db.user}
+    # postgresMajorVersion: 14 # Optional: Specify PostgreSQL version. Defaults to 14.
